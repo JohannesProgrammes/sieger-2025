@@ -50,7 +50,7 @@ def save_data(df, sha):
 
 # 🌟 Streamlit UI
 st.set_page_config(page_title="📊 Umfrage 2025", page_icon="📊")
-st.title("📊 Umfrage 2025")
+st.title("📊 Umfrage 2025 (aber der Titel wurde geändert)")
 st.write("Bitte beantworte die folgenden Fragen:")
 
 # Daten aus GitHub laden
