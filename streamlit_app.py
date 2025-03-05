@@ -21,7 +21,7 @@ def load_data():
     if response.status_code == 200:
         file_content = response.json()["content"]
         decoded_content = base64.b64decode(file_content).decode("utf-8")
-        return pd.read_csv(pd.compat.StringIO(decoded_content)), response.json()["sha"]
+        return pd.read_csv(StringIO(decoded_content)), response.json()["sha"]
     else:
         return pd.DataFrame(columns=["Name", "Alter", "Geschlecht", "Feedback"]), None
 
