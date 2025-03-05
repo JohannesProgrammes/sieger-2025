@@ -73,7 +73,6 @@ if st.checkbox("Ergebnisse anzeigen"):
     st.dataframe(df)
 
 
-import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 
