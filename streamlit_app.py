@@ -7,7 +7,7 @@ import json
 # 🔧 GITHUB EINSTELLUNGEN (ANPASSEN)
 GITHUB_USER = "DEIN_GITHUB_NAME"
 REPO_NAME = "DEIN_REPO"
-CSV_PATH = "data/umfrage.csv"
+CSV_PATH = "data/umfrage_ergebnisse.csv"
 GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]  # ⚠ Sicher speichern! Nutze secrets, falls öffentlich.
 
 # 📥 Funktion: CSV aus GitHub laden
