@@ -1,67 +1,44 @@
-import altair as alt
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import os
 
-# Show the page title and description.
-st.set_page_config(page_title="Sieger 2025", page_icon="🎬")
-st.title("🎬 Sieger 2025")
-st.write(
-    """
-    This app visualizes data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
-    It shows which movie genre performed best at the box office over the years. Just 
-    click on the widgets below to explore!
-    Man kann hier Text schreiben
-    """
-)
+# Titel der Umfrage
+st.set_page_config(page_title="📊 Umfrage 2025", page_icon="📊")
+st.title("📊 Umfrage 2025")
+st.write("Bitte beantworte die folgenden Fragen:")
 
+# Dateiname für die Speicherung der Umfragedaten
+DATA_FILE = "data/umfrage_ergebnisse.csv"
 
-# Load the data from a CSV. We're caching this so it doesn't reload every time the app
-# reruns (e.g. if the user interacts with the widgets).
-@st.cache_data
-def load_data():
-    df = pd.read_csv("data/movies_genres_summary.csv")
-    return df
+# Sicherstellen, dass der Ordner existiert
+os.makedirs("data", exist_ok=True)
 
+# Fragen der Umfrage
+name = st.text_input("Wie heißt du?")
+alter = st.slider("Wie alt bist du?", 10, 100, 25)
+geschlecht = st.radio("Was ist dein Geschlecht?", ["Männlich", "Weiblich", "Divers"])
+zufriedenheit = st.selectbox("Wie zufrieden bist du mit dieser Umfrage?", ["Sehr zufrieden", "Zufrieden", "Neutral", "Unzufrieden", "Sehr unzufrieden"])
+feedback = st.text_area("Hast du noch weiteres Feedback?")
 
-df = load_data()
-
-# Show a multiselect widget with the genres using `st.multiselect`.
-genres = st.multiselect(
-    "Genres",
-    df.genre.unique(),
-    ["Action", "Adventure", "Biography", "Comedy", "Drama", "Horror"],
-)
-
-# Show a slider widget with the years using `st.slider`.
-years = st.slider("Years", 1986, 2006, (2000, 2016))
-
-# Filter the dataframe based on the widget input and reshape it.
-df_filtered = df[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
-df_reshaped = df_filtered.pivot_table(
-    index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
-)
-df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
-
-
-# Display the data as a table using `st.dataframe`.
-st.dataframe(
-    df_reshaped,
-    use_container_width=True,
-    column_config={"year": st.column_config.TextColumn("Year")},
-)
-
-# Display the data as an Altair chart using `st.altair_chart`.
-df_chart = pd.melt(
-    df_reshaped.reset_index(), id_vars="year", var_name="genre", value_name="gross"
-)
-chart = (
-    alt.Chart(df_chart)
-    .mark_line()
-    .encode(
-        x=alt.X("year:N", title="Year"),
-        y=alt.Y("gross:Q", title="Gross earnings ($)"),
-        color="genre:N",
+# Antwort speichern
+if st.button("Antwort absenden"):
+    new_entry = pd.DataFrame(
+        [[name, alter, geschlecht, zufriedenheit, feedback]],
+        columns=["Name", "Alter", "Geschlecht", "Zufriedenheit", "Feedback"]
     )
-    .properties(height=320)
-)
-st.altair_chart(chart, use_container_width=True)
+    
+    # Prüfen, ob Datei existiert, um Header zu setzen
+    if os.path.exists(DATA_FILE):
+        new_entry.to_csv(DATA_FILE, mode="a", header=False, index=False)
+    else:
+        new_entry.to_csv(DATA_FILE, mode="w", header=True, index=False)
+    
+    st.success("Vielen Dank für deine Teilnahme! 🎉")
+
+# Ergebnisse anzeigen
+if st.checkbox("Ergebnisse anzeigen"):
+    if os.path.exists(DATA_FILE):
+        df = pd.read_csv(DATA_FILE)
+        st.dataframe(df)
+    else:
+        st.warning("Noch keine Antworten vorhanden.")
