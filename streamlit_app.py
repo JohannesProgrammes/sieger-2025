@@ -21,21 +21,8 @@ def load_data():
     if response.status_code == 200:
         file_content = response.json()["content"]
         decoded_content = base64.b64decode(file_content).decode("utf-8")
-        
-        # Überprüfen, was in decoded_content enthalten ist
-        st.write("Decoded Content:")
-        st.text(decoded_content)  # Zum Überprüfen des Inhalts
-        
-        try:
-            # Wenn der Inhalt korrekt formatiert ist, laden wir ihn als DataFrame
-            df = pd.read_csv(StringIO(decoded_content))
-            return df, response.json()["sha"]
-        except Exception as e:
-            # Fehlerbehandlung, falls das Einlesen fehlschlägt
-            st.error(f"Fehler beim Einlesen der CSV-Datei: {e}")
-            return pd.DataFrame(columns=["Name", "Alter", "Geschlecht", "Feedback"]), None
+        return pd.read_csv(pd.compat.StringIO(decoded_content)), response.json()["sha"]
     else:
-        st.error(f"Fehler beim Laden der Datei von GitHub: {response.status_code}")
         return pd.DataFrame(columns=["Name", "Alter", "Geschlecht", "Feedback"]), None
 
 # 📤 Funktion: CSV in GitHub speichern
