@@ -71,3 +71,20 @@ if st.button("Antwort absenden"):
 # 📊 Ergebnisse anzeigen
 if st.checkbox("Ergebnisse anzeigen"):
     st.dataframe(df)
+
+
+import streamlit as st
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Beispiel-Daten für das Diagramm
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+
+# Diagramm erstellen
+fig, ax = plt.subplots()
+ax.plot(x, y)
+ax.set(xlabel='X-Achse', ylabel='Y-Achse', title='Sinuskurve')
+
+# Diagramm in Streamlit anzeigen
+st.pyplot(fig)
