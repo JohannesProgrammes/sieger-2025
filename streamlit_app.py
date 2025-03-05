@@ -1,44 +1,72 @@
 import streamlit as st
 import pandas as pd
-import os
+import requests
+import base64
+import json
 
-# Titel der Umfrage
+# 🔧 GITHUB EINSTELLUNGEN (ANPASSEN)
+GITHUB_USER = "DEIN_GITHUB_NAME"
+REPO_NAME = "DEIN_REPO"
+CSV_PATH = "data/umfrage.csv"
+GITHUB_TOKEN = st.secrets["GITHUB_TOKEN"]  # ⚠ Sicher speichern! Nutze secrets, falls öffentlich.
+
+# 📥 Funktion: CSV aus GitHub laden
+def load_data():
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/contents/{CSV_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        file_content = response.json()["content"]
+        decoded_content = base64.b64decode(file_content).decode("utf-8")
+        return pd.read_csv(pd.compat.StringIO(decoded_content)), response.json()["sha"]
+    else:
+        return pd.DataFrame(columns=["Name", "Alter", "Geschlecht", "Feedback"]), None
+
+# 📤 Funktion: CSV in GitHub speichern
+def save_data(df, sha):
+    url = f"https://api.github.com/repos/{GITHUB_USER}/{REPO_NAME}/contents/{CSV_PATH}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    
+    # CSV-Datei in Base64 encodieren
+    csv_content = df.to_csv(index=False).encode("utf-8")
+    encoded_content = base64.b64encode(csv_content).decode("utf-8")
+    
+    # JSON-Body für GitHub API
+    data = {
+        "message": "Update Umfrage-Ergebnisse",
+        "content": encoded_content,
+        "sha": sha  # Damit die API weiß, dass sie die Datei aktualisieren soll
+    }
+    
+    response = requests.put(url, headers=headers, data=json.dumps(data))
+    
+    if response.status_code == 200 or response.status_code == 201:
+        st.success("Antwort gespeichert! ✅")
+    else:
+        st.error(f"Fehler beim Speichern: {response.json()}")
+
+# 🌟 Streamlit UI
 st.set_page_config(page_title="📊 Umfrage 2025", page_icon="📊")
 st.title("📊 Umfrage 2025")
 st.write("Bitte beantworte die folgenden Fragen:")
 
-# Dateiname für die Speicherung der Umfragedaten
-DATA_FILE = "data/umfrage_ergebnisse.csv"
+# Daten aus GitHub laden
+df, sha = load_data()
 
-# Sicherstellen, dass der Ordner existiert
-os.makedirs("data", exist_ok=True)
-
-# Fragen der Umfrage
+# 🚀 Umfrage-Eingaben
 name = st.text_input("Wie heißt du?")
 alter = st.slider("Wie alt bist du?", 10, 100, 25)
-geschlecht = st.radio("Was ist dein Geschlecht?", ["Männlich", "Weiblich", "Divers"])
-zufriedenheit = st.selectbox("Wie zufrieden bist du mit dieser Umfrage?", ["Sehr zufrieden", "Zufrieden", "Neutral", "Unzufrieden", "Sehr unzufrieden"])
-feedback = st.text_area("Hast du noch weiteres Feedback?")
+geschlecht = st.radio("Geschlecht", ["Männlich", "Weiblich", "Divers"])
+feedback = st.text_area("Feedback")
 
-# Antwort speichern
+# ✅ Antwort speichern
 if st.button("Antwort absenden"):
-    new_entry = pd.DataFrame(
-        [[name, alter, geschlecht, zufriedenheit, feedback]],
-        columns=["Name", "Alter", "Geschlecht", "Zufriedenheit", "Feedback"]
-    )
-    
-    # Prüfen, ob Datei existiert, um Header zu setzen
-    if os.path.exists(DATA_FILE):
-        new_entry.to_csv(DATA_FILE, mode="a", header=False, index=False)
-    else:
-        new_entry.to_csv(DATA_FILE, mode="w", header=True, index=False)
-    
-    st.success("Vielen Dank für deine Teilnahme! 🎉")
+    new_data = pd.DataFrame([[name, alter, geschlecht, feedback]], columns=df.columns)
+    df = pd.concat([df, new_data], ignore_index=True)
+    save_data(df, sha)
 
-# Ergebnisse anzeigen
+# 📊 Ergebnisse anzeigen
 if st.checkbox("Ergebnisse anzeigen"):
-    if os.path.exists(DATA_FILE):
-        df = pd.read_csv(DATA_FILE)
-        st.dataframe(df)
-    else:
-        st.warning("Noch keine Antworten vorhanden.")
+    st.dataframe(df)
